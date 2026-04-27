@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude Architect Foundations – Practice Quiz</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #232637;
+      --border: #2e3247;
+      --accent: #7c6ff7;
+      --accent-dim: #5a54c4;
+      --text: #e4e6f0;
+      --text-muted: #8b90a8;
+      --correct: #3ecf8e;
+      --wrong: #f06a6a;
+      --warn: #f5a623;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.7rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Scoreboard ── */
+    #scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .score-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.4rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .score-pill span { font-weight: 700; }
+    .pill-correct span { color: var(--correct); }
+    .pill-wrong span { color: var(--wrong); }
+    .pill-remaining span { color: var(--warn); }
+
+    /* Progress bar */
+    #progress-wrap {
+      max-width: 780px;
+      margin: 0 auto 2rem;
+    }
+    #progress-bar-bg {
+      background: var(--surface);
+      border-radius: 999px;
+      height: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    #progress-bar {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.4s ease;
+      border-radius: 999px;
+    }
+    #progress-label {
+      text-align: right;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+    }
+
+    /* ── Question card ── */
+    #quiz-container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .question-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.8rem;
+      margin-bottom: 1.5rem;
+      transition: opacity 0.3s;
+    }
+
+    .question-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+
+    .q-number {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+
+    .q-scenario {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 1.2rem;
+      color: var(--text);
+    }
+
+    /* Options */
+    .options { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .option-btn {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.95rem;
+      color: var(--text);
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: #252840;
+      transform: translateX(2px);
+    }
+
+    .option-letter {
+      font-weight: 700;
+      min-width: 1.4rem;
+      color: var(--accent);
+    }
+
+    .option-btn.correct {
+      border-color: var(--correct);
+      background: rgba(62, 207, 142, 0.08);
+    }
+
+    .option-btn.wrong {
+      border-color: var(--wrong);
+      background: rgba(240, 106, 106, 0.08);
+    }
+
+    .option-btn.correct .option-letter { color: var(--correct); }
+    .option-btn.wrong .option-letter { color: var(--wrong); }
+
+    .option-btn:disabled { cursor: default; }
+
+    /* Explanation */
+    .explanation {
+      display: none;
+      margin-top: 1.2rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.2rem;
+    }
+
+    .explanation.show { display: block; }
+
+    .explanation-header {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+
+    .explanation-header.correct-hdr { color: var(--correct); }
+    .explanation-header.wrong-hdr { color: var(--wrong); }
+
+    .explanation-body {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.8rem;
+      line-height: 1.6;
+    }
+
+    .takeaway {
+      background: var(--bg);
+      border-left: 3px solid var(--accent);
+      padding: 0.6rem 0.9rem;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
+    .takeaway-label {
+      font-weight: 700;
+      color: var(--accent);
+      margin-right: 0.3rem;
+    }
+
+    .next-btn {
+      margin-top: 1rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.4rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .next-btn:hover { background: var(--accent-dim); transform: translateY(-1px); }
+
+    /* ── Results page ── */
+    #results {
+      display: none;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .results-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .results-card h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .score-big {
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1;
+      margin: 1rem 0 0.3rem;
+    }
+
+    .score-label { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem; }
+
+    .grade-bar {
+      height: 10px;
+      background: var(--surface2);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 0.8rem auto;
+      max-width: 300px;
+    }
+
+    .grade-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--correct);
+    }
+
+    .results-stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.8rem 1.4rem;
+    }
+
+    .stat-val { font-size: 1.8rem; font-weight: 800; }
+    .stat-lbl { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat-correct .stat-val { color: var(--correct); }
+    .stat-wrong .stat-val { color: var(--wrong); }
+
+    /* Review list */
+    .review-section h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .review-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .review-item.correct-item { border-left: 3px solid var(--correct); }
+    .review-item.wrong-item { border-left: 3px solid var(--wrong); }
+
+    .review-q {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .review-answer {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .review-answer strong { color: var(--text); }
+
+    .restart-btn {
+      display: block;
+      margin: 2rem auto 0;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.85rem 2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .restart-btn:hover { background: var(--accent-dim); }
+
+    /* Navigation dots */
+    #nav-dots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      max-width: 780px;
+      margin: 0 auto 2rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      cursor: default;
+    }
+
+    .dot.answered-correct { background: var(--correct); border-color: var(--correct); }
+    .dot.answered-wrong { background: var(--wrong); border-color: var(--wrong); }
+    .dot.current { background: var(--accent); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<h1>Claude Architect Foundations</h1>
+<p class="subtitle">Practice Quiz — 33 questions</p>
+
+<div id="scoreboard">
+  <div class="score-pill pill-correct">Correct: <span id="score-correct">0</span></div>
+  <div class="score-pill pill-wrong">Wrong: <span id="score-wrong">0</span></div>
+  <div class="score-pill pill-remaining">Remaining: <span id="score-remaining">33</span></div>
+</div>
+
+<div id="progress-wrap">
+  <div id="progress-bar-bg"><div id="progress-bar" style="width:0%"></div></div>
+  <div id="progress-label">0 / 33</div>
+</div>
+
+<div id="nav-dots"></div>
+
+<div id="quiz-container"></div>
+<div id="results"></div>
+
+<script>
+const questions = [
+  {
+    scenario: "Schema Design & Self-Correction",
+    question: "An automated invoice extraction pipeline occasionally outputs structured JSON where the extracted line items do not add up to the total amount extracted from the invoice. What is the best architectural approach to handle this semantic error?",
+    options: [
+      "Add a `calculated_total` field alongside the `stated_total` field, compare them, and flag mismatches for human review.",
+      "Automatically adjust the line item values so they mathematically sum to the stated total.",
+      "Introduce a secondary LLM step to reconcile the math errors.",
+      "Add more few-shot examples of correct math to the prompt."
+    ],
+    correct: 0,
+    why: "JSON schemas prevent syntax errors but not semantic errors (like bad math). The most robust self-correction pattern is extracting both what the document explicitly states (stated_total) and what the model calculates from the line items (calculated_total). If they don't match, the record is flagged for human review. This improves reliability without fabricating data.",
+    takeaway: "Design self-correction flows by extracting both a stated value and a calculated value, routing mismatches to human review rather than silently \"fixing\" source document errors."
+  },
+  {
+    scenario: "Batch Processing & Cost Optimization",
+    question: "You are preparing to process 50,000 legacy documents using the Batch API. An initial test on 500 documents reveals that 18% of them require 2-3 prompt refinements to extract data correctly. What is the most cost-efficient strategy for scaling this workload?",
+    options: [
+      "Refine the prompt interactively on a representative sample to maximize first-pass success, then process all 50,000 documents via the Batch API.",
+      "Use the Batch API to process all 50,000 documents immediately, identify failures at scale, and resubmit them.",
+      "Process the 50,000 documents using the synchronous API to handle prompt refinement dynamically per document.",
+      "Begin submitting 5,000-document batches to incrementally learn failure modes in production."
+    ],
+    correct: 0,
+    why: "The guide explicitly recommends refining prompts on a representative sample before batch-processing large volumes. Iterative resubmissions at scale destroy the cost savings of the Batch API. By fixing the failure modes on a localized sample, you ensure the prompt is robust, maximizing first-pass success when you finally trigger the 50,000-document Batch run.",
+    takeaway: "Refine prompts on a representative sample first to maximize first-pass success, then run the full volume through the Batch API to minimize expensive resubmissions."
+  },
+  {
+    scenario: "SLA Management & Async APIs",
+    question: "Your system processes asynchronous user requests with a strict Service Level Agreement (SLA) requiring results within 30 hours of submission. You plan to use the Message Batches API, which can take up to 24 hours to complete. Which batch submission schedule best meets the SLA while maximizing cost efficiency?",
+    options: [
+      "Submit batches every 6 hours.",
+      "Submit one large batch at the end of each day.",
+      "Use the synchronous API instead to guarantee the SLA.",
+      "Submit batches every 4 hours."
+    ],
+    correct: 3,
+    why: "Worst-case total turnaround time is the time a document waits for the next batch window plus the maximum batch processing time (24 hours). If you submit every 4 hours, a document arriving right after a cutoff waits 4 hours + 24 hours processing = 28 hours. This leaves a 2-hour safety buffer under the 30-hour SLA.",
+    takeaway: "Calculate worst-case SLA by adding batch frequency interval to the 24-hour max processing time; always leave an operational buffer."
+  },
+  {
+    scenario: "Schema Engineering & Provenance",
+    question: "An extraction pipeline processes technical manuals. A specific manual lists two conflicting battery capacities: one in the text and a different one in a detailed specs table. Historical data shows the specs table is correct 90% of the time. How should the extraction schema handle this?",
+    options: [
+      "Halt processing and flag the document for manual correction before extraction.",
+      "Use a single-value schema and prompt the model to pick the most likely correct value.",
+      "Hard-code a rule to always extract the value from the specs table.",
+      "Change the field to capture all conflicting values along with their source locations to preserve provenance for downstream reconciliation."
+    ],
+    correct: 3,
+    why: "Forcing premature collapse into a single value is an anti-pattern. If the specs table is only right 90% of the time, hard-coding a preference guarantees a 10% error rate. Modifying the schema to accept an array of values with explicit source locations preserves full provenance, allowing downstream business logic or human reviewers to make an informed reconciliation.",
+    takeaway: "Preserve conflicting source data in the structured output instead of forcing premature collapse into a single value."
+  },
+  {
+    scenario: "Tool Interfaces & Identifiers",
+    question: "An agent uses a `search_documents` tool to find files, and subsequently uses `share_document(document_id, email)` and `move_document(document_id, folder)` to act on them. How should the `search_documents` tool format its output to ensure reliable chaining?",
+    options: [
+      "Return clickable human-readable URLs.",
+      "Return structured data containing `document_id` and metadata for each result.",
+      "Return detailed prose summaries of the document contents.",
+      "Return a simple list of document titles."
+    ],
+    correct: 1,
+    why: "Multi-step workflows require clear input/output contracts. Because the downstream tools (share, move) require a specific machine-usable identifier (document_id), the upstream search tool must return exactly that ID in a structured format alongside the human-readable metadata.",
+    takeaway: "Multi-step tool workflows require machine-usable identifiers; tools meant for chaining should always return structured data containing explicit IDs."
+  },
+  {
+    scenario: "Agentic Tool Integration",
+    question: "When designing agentic workflows, what is the primary advantage of enforcing structured JSON output for tool responses and agent outputs?",
+    options: [
+      "It makes the LLM's reasoning process perfectly deterministic.",
+      "It ensures the semantic truth of the data fetched from backend APIs.",
+      "It significantly reduces token consumption compared to standard text.",
+      "It allows the agent and downstream systems to reliably access specific fields directly without parsing free-form text."
+    ],
+    correct: 3,
+    why: "Structured outputs provide a stable schema contract. Instead of using regex or fuzzy text parsing to extract an account number or currency amount from a verbose prose response, downstream systems (and subsequent agent tools) can directly reference the exact JSON keys. This drastically reduces integration errors in chained operations.",
+    takeaway: "Structured output gives agents reliable field access, preventing downstream errors associated with parsing free-form text."
+  },
+  {
+    scenario: "Context & Tool Management",
+    question: "An agent has access to over 50 different API connector tools. During execution, it frequently selects the wrong connector, even when explicitly instructed to search first. What is the most effective architectural change to fix this tool selection failure?",
+    options: [
+      "Rewrite the tool descriptions for all 50 connectors to be more detailed.",
+      "Combine all 50 connectors into a single monolithic API call.",
+      "Implement better error handling so the agent can recover after selecting the wrong connector.",
+      "Provide a `search_connectors` tool that dynamically scopes the available tool set, exposing only the relevant matched connectors to the agent."
+    ],
+    correct: 3,
+    why: "Exposing 50+ tools simultaneously degrades the model's decision-making accuracy (decision complexity). The architectural fix is to enforce dynamic scoping: the agent first calls search_connectors, and the system responds by injecting only the 2-3 matched, highly relevant connector tools into the agent's context for the next turn.",
+    takeaway: "Reduce decision complexity by dynamically exposing only relevant tools to the agent, rather than dumping 50+ tools into the context window simultaneously."
+  },
+  {
+    scenario: "Tool Schema Engineering",
+    question: "An agent needs to query specific internal databases, but users often refer to them using ambiguous natural language (e.g., \"research database\" instead of \"db_res_01\"). How should the tool's input schema be designed to handle this reliably?",
+    options: [
+      "Use an `enum` parameter explicitly listing the allowed database system names.",
+      "Use a freeform string parameter and use backend fuzzy matching to find the right database.",
+      "Allow freeform strings but reject the tool call at runtime if the name is incorrect.",
+      "Default to searching all databases simultaneously if the user is ambiguous."
+    ],
+    correct: 0,
+    why: "Enums create a strict, constrained input contract. Providing an enum of exact backend values in the tool schema allows the model to leverage its semantic understanding to map the user's messy natural language (\"research database\") to the strict programmatic requirement (\"db_res_01\") before the tool executes.",
+    takeaway: "Use `enum` fields in tool schemas to map ambiguous natural language to strict backend values, improving tool use reliability deterministically."
+  },
+  {
+    scenario: "Tool Output Optimization",
+    question: "A search tool automatically fetches and returns all matching records from a database. This frequently causes severe latency and context bloat, as most agent tasks only need the first few results. What is the best way to redesign this tool's output?",
+    options: [
+      "Silently limit the results to the top 5 most relevant hits.",
+      "Return the first page of results along with pagination metadata (e.g., total count, cursor) so the agent can fetch more if needed.",
+      "Create a separate `fetch_next_page` tool for the agent to use.",
+      "Add a `max_pages` parameter to let the agent decide how many pages to fetch internally."
+    ],
+    correct: 1,
+    why: "Returning hundreds of records wastes context and time. The optimal design is to return just the first page (e.g., 10 records) alongside metadata like total_matches and a next_cursor. This gives the agent the situational awareness to decide if it has enough information, or if it needs to pass the cursor back into the search tool to get page 2.",
+    takeaway: "Return the first page with total match count and a cursor; give the agent explicit pagination state instead of incurring massive multi-page latency by default."
+  },
+  {
+    scenario: "Security & Model Context Protocol",
+    question: "A third-party Model Context Protocol (MCP) server provides tools annotated with `readOnlyHint=true`. You are designing the user confirmation flow for your agent application. How should you treat these tool annotations?",
+    options: [
+      "Trust the annotations automatically because the MCP server runs locally.",
+      "Treat the annotations as untrusted metadata, and base your confirmation bypass policy on your trust of the vendor/server, not the self-reported labels.",
+      "Infer the server's trustworthiness by testing the tools in a sandbox first.",
+      "Bypass user confirmations safely, as the `readOnlyHint` guarantees no destructive actions can occur."
+    ],
+    correct: 1,
+    why: "Tool annotations like readOnlyHint or destructiveHint are entirely self-reported by the MCP server. If the server itself is unvetted or third-party, its metadata cannot be trusted as a security boundary. Confirmation bypass policies should be built on explicit trust of the vendor providing the server, not just taking the server's word for it via annotations.",
+    takeaway: "Treat MCP annotations as untrusted self-reported metadata unless the server itself is explicitly trusted by your system."
+  },
+  {
+    scenario: "Tool Interface Design",
+    question: "An agent frequently executes a two-step sequence: it calls `get_property_details(property_id)` to find an address, then passes that address to `get_neighborhood_info(address)`. This chaining increases latency and failure rates. How should the tool design be improved?",
+    options: [
+      "Merge both tools into a single `get_all_property_data` tool.",
+      "Modify `get_neighborhood_info` to accept `property_id` directly and resolve the address internally.",
+      "Improve the prompt to ensure the agent extracts the address more reliably.",
+      "Create a middle-tier helper tool to manage the data handoff."
+    ],
+    correct: 1,
+    why: "Forcing the agent to orchestrate a purely mechanical ID-to-string lookup wastes tokens, adds a failure point, and increases latency. If get_neighborhood_info frequently logically follows property identification, updating its interface to accept the property_id and handle the address lookup internally abstracts the complexity away from the LLM.",
+    takeaway: "Design tools to internalize predictable dependencies (like ID lookups) to reduce avoidable chaining, latency, and failure coupling."
+  },
+  {
+    scenario: "External Integrations & Tool Responses",
+    question: "An agent tracks shipments using tools that call multiple different shipping carrier APIs. Each carrier returns timestamps, statuses, and delay codes in completely different JSON formats. How should you design the tool output provided to the agent?",
+    options: [
+      "Pass the raw JSON to the agent and provide extensive prompt instructions on how to parse each carrier's format.",
+      "Normalize the carrier responses into a single common schema (e.g., `status`, `estimated_delivery`) before returning it to the agent.",
+      "Create separate tracking tools for each carrier to keep the raw schemas distinct.",
+      "Return both the normalized schema and the full raw response to maximize context."
+    ],
+    correct: 1,
+    why: "Agents reason best over consistent, predictable data structures. Dumping heterogeneous, carrier-specific schemas into the context forces the LLM to expend attention on parsing formats rather than solving the user's core problem. Normalizing the output in your middleware abstracts away vendor quirks.",
+    takeaway: "Normalize heterogeneous API responses into a consistent common schema before returning them to the agent to reduce cognitive load and improve reasoning."
+  },
+  {
+    scenario: "Tool Input Brittleness",
+    question: "An agent updates sports scores using an `update_game_score(date, team_name)` tool. The tool frequently fails due to ambiguous team nicknames, rematches on the same day, and date format variations. What is the most reliable tool design to fix this?",
+    options: [
+      "Require strict ISO-8601 date formats and official full team names in the tool schema.",
+      "Improve the tool description to provide examples of correct formatting.",
+      "Add regex validation to the tool parameters to catch formatting errors early.",
+      "Introduce a `search_games` tool that returns a `game_id`, and update the scoring tool to accept only the `game_id`."
+    ],
+    correct: 3,
+    why: "Natural language attributes (like dates and team names) are inherently ambiguous and brittle when used as database keys. The architectural fix is to separate discovery from action. Use a lookup tool (search_games) that returns a machine-usable identifier (game_id), and force the mutative tool (update_score) to rely exclusively on that strict identifier.",
+    takeaway: "Replace tools relying on ambiguous human-entered text fields with a two-step lookup/action pattern utilizing strict machine-usable identifiers (IDs)."
+  },
+  {
+    scenario: "System Boundaries & Security",
+    question: "An agent processes employee reimbursements. Company policy dictates that payouts over $500 must go to a pending approval queue and cannot be disbursed automatically. You need to ensure this threshold absolutely cannot be bypassed by the agent. Where should this rule be enforced?",
+    options: [
+      "Add a `requires_approval` boolean parameter to the tool schema that the agent must set.",
+      "Enforce the $500 threshold inside the `process_reimbursement` tool logic itself.",
+      "Write a strict system prompt instructing the agent to never disburse amounts over $500.",
+      "Provide two separate tools (`disburse` and `request_approval`) and trust the agent to select correctly."
+    ],
+    correct: 1,
+    why: "If a rule cannot be bypassed, it must be enforced deterministically in the backend, not probabilistically in the LLM. Implementing the threshold inside the tool code guarantees that even if the agent hallucinates or is subjected to prompt injection, any payload over $500 will gracefully degrade to a \"pending approval\" state without breaking policy.",
+    takeaway: "Strict business rules and approval thresholds must be enforced deterministically inside the backend tool logic, never via prompt instructions or agent tool selection."
+  },
+  {
+    scenario: "Tool Schema Documentation",
+    question: "During execution, an agent repeatedly struggles to format inputs correctly for `user_id` and `fields_to_update` when calling an update tool. What is the most effective way to help the model understand exactly what values and formats to provide?",
+    options: [
+      "Write clear, detailed parameter descriptions in the tool schema.",
+      "Make the JSON schema extremely strict with complex regex constraints.",
+      "Rename the tool to include formatting hints in the tool name itself.",
+      "Add error-handling logic that explains the formatting rules only when the tool fails."
+    ],
+    correct: 0,
+    why: "Tool descriptions and parameter descriptions are the primary mechanism models use to understand expected inputs, formats, examples, and boundaries. Writing explicit instructions on a property (e.g., \"description\": \"UUID of the user to update (required)\") directly guides the model's token generation prior to tool execution.",
+    takeaway: "Clear, detailed parameter descriptions in the JSON schema are the primary and most important mechanism for guiding a model on input formatting."
+  },
+  {
+    scenario: "Error Recovery in Workflows",
+    question: "A tool experiences two types of errors: transient network timeouts, and permanent user syntax errors. How should the tool handle these errors to optimize the agent workflow?",
+    options: [
+      "Pass all errors to the agent and prompt it to retry timeouts but stop on syntax errors.",
+      "Automatically retry transient network timeouts inside the tool, but immediately return syntax errors with clear validation details to the agent.",
+      "Uniformly auto-retry all errors 3 times before returning a failure message to the agent.",
+      "Return all errors immediately to the agent as generic 'Tool Execution Failed' messages."
+    ],
+    correct: 1,
+    why: "Agents shouldn't waste context tokens and LLM execution time resolving predictable, system-level transient errors (like timeouts). Those should be handled via standard engineering retry loops inside the tool. However, syntax/validation errors require the agent's reasoning capability to fix the input. Returning those immediately with explicit validation details allows the agent to self-correct efficiently.",
+    takeaway: "Abstract transient error retries (timeouts) into backend tool logic, but return validation/syntax errors immediately to the agent with explicit details so it can self-correct."
+  },
+  {
+    scenario: "Tool Boundaries & Selection",
+    question: "An agent has access to an `archive_file` tool and a `delete_file` tool. It frequently calls `delete_file` when it should have archived a backup file. What is the most direct way to fix this tool selection error?",
+    options: [
+      "Expand the tool descriptions to clearly define the purpose, boundaries, and specific scenarios where archiving is preferred over deleting.",
+      "Add a confirmation prompt directly inside the `delete_file` tool logic.",
+      "Remove the `delete_file` tool entirely and handle deletions via a separate batch process.",
+      "Provide few-shot examples in the system prompt showing correct usage."
+    ],
+    correct: 0,
+    why: "Tool descriptions are the highest-leverage mechanism for solving tool selection errors. When two tools have overlapping capabilities, their descriptions must explicitly define negative constraints and boundaries (e.g., delete_file: \"Permanently deletes a file. Do NOT use this for backup or compliance files—use archive_file instead.\").",
+    takeaway: "When models confuse similar tools, rewrite the tool descriptions to explicitly define negative boundaries and specific scenarios for use."
+  },
+  {
+    scenario: "Iterative Workflows & State Updates",
+    question: "You are using an agent to analyze a 12-file codebase. After the agent completes its initial review, a developer modifies 3 of the files. You want the agent to update its findings efficiently. What is the best approach?",
+    options: [
+      "Resume the session, explicitly inform the agent which 3 files changed, and instruct it to re-analyze only those files in the context of its prior findings.",
+      "Start a completely fresh session and have the agent re-analyze all 12 files from scratch.",
+      "Resume the session but don't explicitly mention the changes, trusting the agent to notice the file diffs organically.",
+      "Create a new session containing only the 3 modified files, discarding the context of the other 9 files."
+    ],
+    correct: 0,
+    why: "If the majority of a session's context is still valid, resuming is efficient. However, you must structurally inform the agent about the delta. By explicitly stating which files changed and directing it to re-analyze only those targets, the agent utilizes its existing contextual understanding of the codebase without wasting time re-verifying unmodified files.",
+    takeaway: "When resuming sessions after minor code/data changes, explicitly inform the resumed session about the specific changes for targeted re-analysis rather than forcing full re-exploration."
+  },
+  {
+    scenario: "Discovery via Model Context Protocol",
+    question: "An agent interacting with multiple Model Context Protocol (MCP) servers wastes significant context and time performing sequential lookup calls just to discover what data (issue tickets, docs, schemas) is available. How can you improve data discovery?",
+    options: [
+      "Consolidate all the MCP servers into a single, massive endpoint.",
+      "Add a new `discover_data` tool to every MCP server.",
+      "Implement keyword-based routing in the coordinator to send queries to the right server automatically.",
+      "Expose each MCP server's content catalog as an MCP Resource, allowing the agent to read what data exists before making targeted tool calls."
+    ],
+    correct: 3,
+    why: "MCP distinguishes between Tools (for taking actions or specific queries) and Resources (for exposing available context/data). Exposing hierarchies, issue summaries, or database schemas directly as Resources allows the agent to holistically \"see\" what data exists in a lightweight manner before deciding exactly which precise tool calls to make, eliminating exploratory spam.",
+    takeaway: "Use MCP Resources to expose content catalogs (docs, schemas, summaries) so agents can discover available data before wasting turns on exploratory tool calls."
+  },
+  {
+    scenario: "Workflow Decomposition",
+    question: "An agent is responsible for reviewing pull requests. Every PR must be reviewed for three specific aspects: code style, security vulnerabilities, and documentation accuracy. Which architectural pattern is best suited for this workflow?",
+    options: [
+      "Dynamic subagent decomposition, letting a coordinator agent decide which aspects to check case-by-case.",
+      "A routing agent that categorizes the PR and sends it to either a style, security, or docs specialist.",
+      "A single, massive prompt instructing one agent to analyze all three aspects simultaneously.",
+      "Prompt chaining: reviewing style, security, and documentation in separate sequential passes, then merging the outputs into a final synthesis."
+    ],
+    correct: 3,
+    why: "When a workflow is highly predictable, mandatory, and follows the exact same decomposition every time, prompt chaining is the superior pattern. Because style, security, and docs are entirely different cognitive lenses, chaining them sequentially in isolated passes prevents attention dilution (the model forgetting to check security while obsessing over style).",
+    takeaway: "Use prompt chaining for predictable, static multi-aspect workflows; isolate distinct cognitive tasks into separate sequential passes before merging them into a final output."
+  },
+  {
+    scenario: "Agentic Architecture & Context Management",
+    question: "In a production environment, follow-up summarization queries to a multi-agent system take over 40 seconds. Investigation shows the coordinator agent spawns a synthesis subagent for each follow-up request, passing 80,000 tokens of accumulated findings. The coordinator already holds these findings in its context from orchestrating the initial research. What is the most effective way to improve response time for these follow-up summaries?",
+    options: [
+      "Compress findings before passing them to the synthesis subagent.",
+      "Increase the synthesis subagent's context window.",
+      "Handle the summarization directly using the coordinator's existing context.",
+      "Cache synthesis subagent responses.",
+      "Use `fork_session` to speed up subagent spawning."
+    ],
+    correct: 2,
+    why: "Since the coordinator already has the research findings in its context from the orchestration phase, follow-up summarization queries should be handled by the coordinator itself. Subagents start fresh and do not inherit the coordinator's conversation history. Spawning a subagent and passing 80k tokens is an anti-pattern when the coordinator can do the work with its existing context.",
+    takeaway: "If the coordinator already has the information in its context, handle it at the coordinator level—never spawn a subagent just to re-process data the coordinator already owns."
+  },
+  {
+    scenario: "Agentic Architecture & Subagent Isolation",
+    question: "After web search and document analysis subagents finish their tasks, the coordinator needs to spawn a synthesis subagent to combine the findings. What is the correct approach for providing the synthesis subagent with the information it needs?",
+    options: [
+      "Let the synthesis subagent call the search and analysis tools itself.",
+      "Let the synthesis subagent read directly from the coordinator's session history.",
+      "Pass a prose summary of the findings to the synthesis subagent.",
+      "Pass complete findings embedded directly in the synthesis subagent's prompt using a structured format separating content from metadata."
+    ],
+    correct: 3,
+    why: "Subagents start with zero knowledge and do not automatically inherit the coordinator's conversation history. The coordinator must explicitly inject all prior agent outputs directly into the synthesis subagent's prompt. Using a structured format (e.g., {claim, evidence, source_url, date}) ensures content, source metadata, and temporality are preserved so the synthesis agent can properly attribute findings.",
+    takeaway: "Explicitly inject all prior findings directly into the subagent's prompt using a structured {claim, evidence, source, date} format; never rely on context inheritance or pass prose-only summaries."
+  },
+  {
+    scenario: "Agent Adaptability & Prompt Engineering",
+    question: "A coordinator provides exact search queries, source priorities, and date filters step-by-step to a web search subagent. However, the subagent often reports \"insufficient results\" instead of trying alternatives, drops in quality on emerging topics, and rarely surfaces unconventional sources. What is the most effective way to improve the subagent's adaptability?",
+    options: [
+      "Add a fallback instruction to report failure if fewer than 5 results are found.",
+      "Replace procedural instructions with goal-oriented prompts detailing research goals and quality criteria.",
+      "Expand the exact query lists to cover emerging topics.",
+      "Provide generic, single-word queries to broaden the search base."
+    ],
+    correct: 1,
+    why: "Over-specifying coordinator prompts with procedural, step-by-step instructions turns the subagent into a rigid executor. If exact steps fail, it hits a dead end. Providing a research intent, minimum quality thresholds (e.g., \"minimum 5 distinct claims\"), and criteria for credible sources grants the subagent the authority and context to dynamically adapt its approach and form its own queries.",
+    takeaway: "Replace step-by-step procedural instructions with research goals and quality criteria to give subagents the authority to adapt their approaches when pre-specified paths fail."
+  },
+  {
+    scenario: "Latency Optimization & Tool Execution",
+    question: "A document analysis subagent processes citations in complex legal cases sequentially. A landmark case citing 12 precedents currently takes over 3 minutes to process. What is the most effective way to reduce this latency?",
+    options: [
+      "Increase the subagent's context window.",
+      "Have the coordinator emit multiple Task tool calls simultaneously in a single response.",
+      "Use `fork_session` to speed up processing.",
+      "Use the Message Batches API."
+    ],
+    correct: 1,
+    why: "Sequential processing of independent, parallelizable work is an anti-pattern. Instead of looping sequentially, the coordinator should emit all 12 Task tool calls in a single response turn. This spawns 12 parallel analysis subagents simultaneously, dropping the total latency from the sum of all tasks (3+ minutes) to the duration of the longest single task (~15-20 seconds).",
+    takeaway: "Emit multiple Task tool calls in a single coordinator response turn to achieve parallel execution and reduce pipeline latency."
+  },
+  {
+    scenario: "Context Management & Synthesis Precision",
+    question: "Final reports consistently mishandle uncertainty. A web search agent returns a $50B estimate (unspecified methodology), while a document analysis agent returns a $35B estimate (±$7B, 95% CI). The coordinator either picks one arbitrarily or produces a vague, hedged statement. What approach best avoids this?",
+    options: [
+      "Instruct the coordinator to always prefer peer-reviewed sources.",
+      "Ask the synthesis subagent to pick the most recent figure.",
+      "Have the coordinator average the two conflicting values.",
+      "Require subagents to return structured data with methodology/confidence metadata and a `conflict_detected` flag to preserve both values."
+    ],
+    correct: 3,
+    why: "Unstructured prose findings lose provenance. If subagents return plain text, the coordinator has no structured basis to distinguish high-quality methodologies from guesses. Subagents must return structured objects {claim, source_type, methodology, confidence, date}. When claims conflict, a programmatic conflict_detected flag forces the synthesis agent to handle it explicitly by presenting both values with their source context in the final report.",
+    takeaway: "Require subagents to return structured metadata objects and use a `conflict_detected` boolean so synthesis agents preserve both values with attribution rather than silently collapsing them."
+  },
+  {
+    scenario: "Context Budgets & Downstream Handoffs",
+    question: "A web search agent gathers 120k tokens of raw content, a document analysis agent extracts 15k tokens of insights, and a synthesis agent produces a 3k-token narrative draft. The coordinator must now pass context to a report generation agent for final output with proper citations. Which context-passing strategy provides the best balance of completeness and efficiency?",
+    options: [
+      "Pass the 120k tokens of raw content and all intermediate outputs.",
+      "Pass only the 3k-token synthesis narrative.",
+      "Pass the synthesis narrative and the full document analysis reasoning chain.",
+      "Pass the synthesis narrative along with a lean, structured citation index and conflict flags."
+    ],
+    correct: 3,
+    why: "Passing 138k+ tokens of raw content to the report agent wastes budget, balloons latency, and triggers the \"lost in the middle\" effect (where the LLM ignores context in the middle of a massive prompt). Passing too little causes hallucinations. The optimal balance is passing the dense narrative backbone (3k) plus a compact, structured citation index (5–8k tokens) representing only the essential metadata {citation_id, claim, source, key_quote}.",
+    takeaway: "Pass the synthesis narrative plus a structured citation index; strip raw content and reasoning chains entirely to avoid \"lost in the middle\" degradation."
+  },
+  {
+    scenario: "Metadata Preservation & Attribution",
+    question: "A synthesis agent receives findings from upstream agents and passes a consolidated prose summary to a report generation agent. During testing, the report generator makes factual claims but cannot accurately attribute them because source metadata was lost during the summarization step. What is the most effective approach to ensure proper source attribution?",
+    options: [
+      "Ask the synthesis agent to re-include the full source text in its summary.",
+      "Assign a `citation_id` at the earliest agent, and require the synthesis agent to produce an inline-tagged narrative alongside a preserved structured citation index.",
+      "Instruct the report agent to infer the original sources from the claim content.",
+      "Instruct the synthesis agent to \"preserve sources\" in its prose output."
+    ],
+    correct: 1,
+    why: "Prose summaries inherently destroy metadata (URLs, page numbers, dates) as they collapse text into readable sentences. The structural fix is to separate content from metadata. Assign a citation_id at the source discovery level. The synthesis agent then writes a narrative using inline brackets (e.g., [src_001]), while the full metadata lives safely in a separate structured citation index array passed alongside the narrative.",
+    takeaway: "Assign citation_id tags at the earliest stage, require the synthesis agent to output an inline-tagged narrative, and pass a separate structured citation index to the final agent."
+  },
+  {
+    scenario: "Stateful Orchestration & Failure Recovery",
+    question: "A multi-agent research pipeline crashes after processing 12 out of 18 documents. Each agent has partially completed work. You need to resume the pipeline without losing the fidelity of prior findings or repeating completed work. What is the best state management approach?",
+    options: [
+      "Run the `--resume` command directly on the crashed session.",
+      "Use `fork_session` from the crash point to branch the execution.",
+      "Write completed findings to a structured checkpoint file, start a fresh session, and inject the checkpoint as structured context.",
+      "Resume the session without noting partial document states."
+    ],
+    correct: 2,
+    why: "When a pipeline crashes mid-execution, tool results in that session become stale and unreliable. Blindly resuming risks the agent re-processing data or corrupting context. The correct pattern is to extract completed work into a durable structured JSON checkpoint file, start a new session, and inject that checkpoint at the top of the prompt. You must explicitly tell the agent which documents are complete, which are partial (by section), and which are pending.",
+    takeaway: "Extract completed work to a structured checkpoint file, start a fresh session, and explicitly inject the checkpoint—never blindly --resume a crashed session with stale tool results."
+  },
+  {
+    scenario: "Data Synthesis & Schema Design",
+    question: "During research on \"renewable energy adoption,\" a web search agent returns statistics from 2024, while a document analysis agent returns statistics from 2021. The synthesis agent incorrectly flags these as contradictory rather than recognizing a growth trend over time. What single change best enables the synthesis agent to correctly interpret this difference?",
+    options: [
+      "Instruct the synthesis agent via prompt to check for date differences before flagging conflicts.",
+      "Require `publication_date` in structured subagent outputs and update synthesis instructions to treat differing values across distinct dates as progression, not conflict.",
+      "Ask the coordinator to merge findings into a single timeline manually.",
+      "Set `conflict_detected: false` by default unless values match exactly."
+    ],
+    correct: 1,
+    why: "Without a structural representation of time, differing values look like conflicts to the model. By enforcing publication_date in the subagent output schema and instructing the synthesis agent to view differing values across distinct dates as progression, the system correctly identifies temporal growth. conflict_detected: true should only trigger for differing values within the same time period.",
+    takeaway: "Always include temporal metadata (publication_date) in extraction schemas to prevent synthesis agents from misinterpreting chronological progression as data contradiction."
+  },
+  {
+    scenario: "Output Validation & Automation Gating",
+    question: "An extraction system has operated with 100% human review for 3 months. Analysis shows that extractions with a model confidence of >=90% have a 97% accuracy overall. To reduce reviewer workload, you plan to automate high-confidence extractions. Before deploying, what validation step is most critical?",
+    options: [
+      "Segment the accuracy metrics by document type and field.",
+      "Deploy the automation globally at the >=90% confidence threshold.",
+      "Run a random sample review across all documents before deploying.",
+      "Increase the confidence threshold to >=95% just to be safe."
+    ],
+    correct: 0,
+    why: "An aggregate metric of \"97% overall\" is dangerous because it can mask catastrophic failure rates in minority subsets (e.g., standard invoices might be 99.2% accurate, while handwritten forms are 61.0%). You must run a stratified analysis to break down accuracy by document type and field before automating, ensuring you only remove humans from safe segments.",
+    takeaway: "Always segment accuracy by document type and field before automating; overall accuracy metrics mask per-category failure rates."
+  },
+  {
+    scenario: "API Usage & Error Handling",
+    question: "After a daily batch of 10,000 documents completes processing, 300 documents (3%) fail with `context_length_exceeded` errors. The result file identifies each failure by its `custom_id`. What is the most cost-effective approach to process these failures?",
+    options: [
+      "Resubmit all 10,000 documents with a smaller chunk size.",
+      "Switch the 300 failed documents to the synchronous API.",
+      "Extract only the 300 failed documents using their `custom_id`, chunk them, and resubmit them as a new batch.",
+      "Increase the context window limit globally."
+    ],
+    correct: 2,
+    why: "Resubmitting successful documents wastes money (97% of the cost). You must use the custom_id mapping provided by the Batch API result file to isolate the 300 failures. Because the error is context_length_exceeded, the documents are too large for a single request. You must chunk those specific documents into smaller segments and submit them in a new batch request.",
+    takeaway: "Use custom_id to extract only failed documents, modify them (e.g., chunking for context limits), and resubmit only the failures to maintain Batch API cost efficiencies."
+  },
+  {
+    scenario: "Context Degradation & Schema Bloat",
+    question: "An extraction system uses a 12-field JSON schema and detailed tool descriptions totaling ~2,500 tokens. For documents under 150k tokens, accuracy is 98%. However, for documents between 175k-185k tokens, accuracy drops to 71%, with information from the final third of the document consistently missing. The model's context window is 200k tokens. What is the most likely cause of this degradation?",
+    options: [
+      "The tool definition consumes input tokens, and combined with system prompts, pushes the total input close to the context limit, degrading attention for content at the end.",
+      "Schemas exceeding 8-10 fields inherently increase decision complexity.",
+      "Very long documents exceed the model's effective attention span causing middle-document degradation.",
+      "The model distributes attention proportionally, causing the end of the document to receive insufficient focus."
+    ],
+    correct: 0,
+    why: "Context limits are absolute. If you have a 200k limit, but 2,500 tokens are taken by the tool schema and 1,500 by the system prompt, your effective document space is ~196k. As document tokens approach 180k+, the total payload nears the edge of the context boundary. Models suffer degraded attention (not just hard cut-offs) near the absolute limit, which manifests specifically as the \"final third consistently missing.\"",
+    takeaway: "Large tool schemas and system prompts consume your context budget; long documents near the absolute limit will suffer degraded attention at the end of the prompt. Trim schemas or chunk documents."
+  },
+  {
+    scenario: "Tool Orchestration & Dependencies",
+    question: "A pipeline uses an `extract_metadata` tool that returns a DOI. It also has `lookup_citations` and `verify_doi` enrichment tools that require a DOI to function. When users ask to \"extract the metadata and tell me how cited it is\", the model sometimes calls the enrichment tools first, which fail because they lack the DOI. What is the most effective way to ensure structured metadata extraction happens first?",
+    options: [
+      "Add a prompt instruction to \"always call extract_metadata first.\"",
+      "Set `tool_choice` to strictly force the `extract_metadata` tool on the first turn, then use `tool_choice: \"auto\"` for subsequent turns.",
+      "Combine all three tools into a single massive tool.",
+      "Use `tool_choice: \"auto\"` but restrict the descriptions of the enrichment tools."
+    ],
+    correct: 1,
+    why: "When tools have strict dependencies (a DOI must exist before citations can be looked up), you must enforce a deterministic prerequisite gate. Setting tool_choice: {\"type\": \"tool\", \"name\": \"extract_metadata\"} explicitly forces the model to execute that tool on Turn 1. Once the DOI is returned to the context, you switch to \"auto\" on Turn 2 so the model can freely use the enrichment tools.",
+    takeaway: "When deterministic execution order is required for tool dependencies, use forced tool_choice on the first turn, then release to \"auto\" on subsequent turns."
+  }
+];
+
+const LETTERS = ["A", "B", "C", "D", "E"];
+
+let current = 0;
+let correct = 0;
+let wrong = 0;
+let answers = []; // {chosen, isCorrect}
+
+function updateScoreboard() {
+  document.getElementById("score-correct").textContent = correct;
+  document.getElementById("score-wrong").textContent = wrong;
+  document.getElementById("score-remaining").textContent = questions.length - current;
+  const pct = (current / questions.length) * 100;
+  document.getElementById("progress-bar").style.width = pct + "%";
+  document.getElementById("progress-label").textContent = `${current} / ${questions.length}`;
+}
+
+function renderDots() {
+  const wrap = document.getElementById("nav-dots");
+  wrap.innerHTML = "";
+  questions.forEach((_, i) => {
+    const d = document.createElement("div");
+    d.className = "dot";
+    if (i < answers.length) {
+      d.classList.add(answers[i].isCorrect ? "answered-correct" : "answered-wrong");
+    } else if (i === current) {
+      d.classList.add("current");
+    }
+    wrap.appendChild(d);
+  });
+}
+
+function renderQuestion(idx) {
+  const q = questions[idx];
+  const container = document.getElementById("quiz-container");
+  container.innerHTML = "";
+
+  const card = document.createElement("div");
+  card.className = "question-card";
+
+  card.innerHTML = `
+    <div class="question-meta">
+      <span class="q-number">Question ${idx + 1} of ${questions.length}</span>
+      <span class="q-scenario">${q.scenario}</span>
+    </div>
+    <p class="question-text">${q.question}</p>
+    <div class="options" id="options-${idx}"></div>
+    <div class="explanation" id="explanation-${idx}">
+      <div class="explanation-header" id="exp-header-${idx}"></div>
+      <p class="explanation-body" id="exp-body-${idx}"></p>
+      <div class="takeaway"><span class="takeaway-label">Exam Takeaway:</span>${q.takeaway}</div>
+      <button class="next-btn" id="next-btn-${idx}">${idx === questions.length - 1 ? "See Results" : "Next Question →"}</button>
+    </div>
+  `;
+
+  container.appendChild(card);
+
+  const optWrap = document.getElementById(`options-${idx}`);
+  q.options.forEach((opt, oi) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.innerHTML = `<span class="option-letter">${LETTERS[oi]}</span><span>${opt}</span>`;
+    btn.addEventListener("click", () => handleAnswer(idx, oi));
+    optWrap.appendChild(btn);
+  });
+
+  document.getElementById(`next-btn-${idx}`).addEventListener("click", () => {
+    current++;
+    updateScoreboard();
+    renderDots();
+    if (current >= questions.length) {
+      showResults();
+    } else {
+      renderQuestion(current);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
+}
+
+function handleAnswer(idx, chosen) {
+  const q = questions[idx];
+  const isCorrect = chosen === q.correct;
+
+  if (isCorrect) correct++; else wrong++;
+  answers.push({ chosen, isCorrect });
+
+  // Disable all buttons
+  const optBtns = document.querySelectorAll(`#options-${idx} .option-btn`);
+  optBtns.forEach((btn, oi) => {
+    btn.disabled = true;
+    if (oi === q.correct) btn.classList.add("correct");
+    if (oi === chosen && !isCorrect) btn.classList.add("wrong");
+  });
+
+  // Show explanation
+  const exp = document.getElementById(`explanation-${idx}`);
+  const hdr = document.getElementById(`exp-header-${idx}`);
+  const body = document.getElementById(`exp-body-${idx}`);
+  exp.classList.add("show");
+
+  if (isCorrect) {
+    hdr.textContent = "Correct!";
+    hdr.className = "explanation-header correct-hdr";
+    body.textContent = q.why;
+  } else {
+    hdr.textContent = `Incorrect — Correct answer: ${LETTERS[q.correct]}`;
+    hdr.className = "explanation-header wrong-hdr";
+    body.textContent = q.why;
+  }
+
+  updateScoreboard();
+  renderDots();
+}
+
+function showResults() {
+  document.getElementById("quiz-container").style.display = "none";
+  document.getElementById("nav-dots").style.display = "none";
+  const results = document.getElementById("results");
+  results.style.display = "block";
+
+  const pct = Math.round((correct / questions.length) * 100);
+  let grade = pct >= 90 ? "Excellent!" : pct >= 75 ? "Good work!" : pct >= 60 ? "Keep practicing!" : "Needs review";
+  let gradeColor = pct >= 90 ? "var(--correct)" : pct >= 75 ? "var(--accent)" : pct >= 60 ? "var(--warn)" : "var(--wrong)";
+
+  const wrongItems = answers.map((a, i) => ({ ...a, q: questions[i], idx: i })).filter(a => !a.isCorrect);
+
+  results.innerHTML = `
+    <div class="results-card">
+      <h2>${grade}</h2>
+      <div class="score-big" style="color:${gradeColor}">${pct}%</div>
+      <div class="score-label">Overall Score</div>
+      <div class="grade-bar"><div class="grade-bar-fill" style="width:${pct}%;background:${gradeColor}"></div></div>
+      <div class="results-stats">
+        <div class="stat-box stat-correct">
+          <div class="stat-val">${correct}</div>
+          <div class="stat-lbl">Correct</div>
+        </div>
+        <div class="stat-box stat-wrong">
+          <div class="stat-val">${wrong}</div>
+          <div class="stat-lbl">Wrong</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${questions.length}</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+      </div>
+    </div>
+
+    ${wrongItems.length > 0 ? `
+    <div class="review-section">
+      <h3>Review — Questions You Missed (${wrongItems.length})</h3>
+      ${wrongItems.map(item => `
+        <div class="review-item wrong-item">
+          <div class="review-q">Q${item.idx + 1}: ${item.q.question}</div>
+          <div class="review-answer">
+            Your answer: <strong>${LETTERS[item.chosen]} — ${item.q.options[item.chosen]}</strong><br/>
+            Correct answer: <strong>${LETTERS[item.q.correct]} — ${item.q.options[item.q.correct]}</strong><br/>
+            <em style="font-size:0.8rem;display:block;margin-top:0.4rem;">${item.q.takeaway}</em>
+          </div>
+        </div>
+      `).join("")}
+    </div>` : `<div class="review-section"><h3>Perfect score — all questions correct!</h3></div>`}
+
+    <button class="restart-btn" onclick="restartQuiz()">Restart Quiz</button>
+  `;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function restartQuiz() {
+  current = 0; correct = 0; wrong = 0; answers = [];
+  document.getElementById("quiz-container").style.display = "";
+  document.getElementById("nav-dots").style.display = "";
+  document.getElementById("results").style.display = "none";
+  updateScoreboard();
+  renderDots();
+  renderQuestion(0);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Init
+updateScoreboard();
+renderDots();
+renderQuestion(0);
+</script>
+</body>
+</html>

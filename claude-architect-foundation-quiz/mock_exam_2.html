@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCAR-F Mock Exam 2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --deep-ocean: #002A41;
+      --ocean: #1E5E82;
+      --sky-blue: #81CCEA;
+      --cloud: #EEF9FD;
+      --flamingo: #D86E89;
+      --white: #FFFFFF;
+      --text-primary: #EEF9FD;
+      --text-muted: #81CCEA;
+      --surface: #0a3d57;
+      --surface-raised: #0d4a6a;
+      --border: #1E5E82;
+      --correct-bg: #0d3d2a;
+      --correct-border: #2d7a50;
+      --correct-text: #6fcf97;
+      --wrong-bg: #3d1522;
+      --wrong-border: #a03050;
+      --wrong-text: #f28b9e;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--deep-ocean); color: var(--text-primary); min-height: 100vh; display: flex; justify-content: center; padding: 32px 16px; }
+    .container { max-width: 780px; width: 100%; }
+    header { text-align: center; margin-bottom: 32px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+    header p { color: var(--text-muted); font-size: 0.9rem; }
+    .progress-wrap { margin-bottom: 24px; }
+    .progress-meta { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px; }
+    .progress-bar { height: 6px; background: var(--surface); border-radius: 100px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--sky-blue), var(--flamingo)); border-radius: 100px; transition: width 0.4s ease; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 36px 40px; }
+    .question-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .q-number { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); }
+    .domain-badge { font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: rgba(30,94,130,0.4); color: var(--sky-blue); border: 1px solid var(--ocean); }
+    .question-text { font-size: 1.05rem; font-weight: 500; line-height: 1.65; margin-bottom: 28px; color: var(--cloud); }
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: background 0.15s, border-color 0.15s; background: var(--surface-raised); }
+    .option:hover:not(.disabled) { background: rgba(129,204,234,0.07); border-color: var(--sky-blue); }
+    .option-letter { font-size: 0.85rem; font-weight: 700; color: var(--sky-blue); min-width: 22px; padding-top: 1px; }
+    .option-text { font-size: 0.95rem; line-height: 1.55; color: var(--text-primary); }
+    .option.correct { background: var(--correct-bg); border-color: var(--correct-border); }
+    .option.correct .option-letter { color: var(--correct-text); }
+    .option.correct .option-text { color: var(--correct-text); }
+    .option.wrong { background: var(--wrong-bg); border-color: var(--wrong-border); }
+    .option.wrong .option-letter { color: var(--wrong-text); }
+    .option.wrong .option-text { color: var(--wrong-text); }
+    .option.disabled { cursor: default; }
+    .explanation { display: none; margin-top: 20px; padding: 18px 20px; background: rgba(0,42,65,0.6); border-left: 4px solid var(--ocean); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+    .explanation.visible { display: block; }
+    .explanation h4 { font-size: 0.85rem; font-weight: 700; color: var(--sky-blue); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .explanation p { font-size: 0.92rem; line-height: 1.6; color: var(--cloud); }
+    .next-btn { display: none; margin-top: 24px; padding: 13px 28px; background: var(--flamingo); color: var(--white); border: none; border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .next-btn:hover { opacity: 0.88; }
+    .next-btn.visible { display: inline-block; }
+    .score-screen { display: none; text-align: center; }
+    .score-screen.visible { display: block; }
+    .score-circle { width: 120px; height: 120px; border-radius: 50%; background: var(--ocean); color: var(--white); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 28px; }
+    .score-number { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+    .score-label { font-size: 0.78rem; opacity: 0.8; margin-top: 2px; }
+    .score-screen h2 { font-size: 1.4rem; color: var(--white); margin-bottom: 8px; }
+    .score-screen > p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; }
+    .domain-breakdown { text-align: left; margin-top: 28px; }
+    .domain-breakdown h3 { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+    .domain-row { display: flex; align-items: center; margin-bottom: 10px; }
+    .domain-name { font-size: 0.88rem; color: var(--text-primary); flex: 1; }
+    .domain-score { font-size: 0.88rem; font-weight: 600; color: var(--sky-blue); margin-left: 16px; min-width: 36px; text-align: right; }
+    .domain-bar-wrap { width: 100px; height: 6px; background: var(--surface); border-radius: 100px; margin: 0 12px; overflow: hidden; }
+    .domain-bar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--sky-blue), var(--flamingo)); }
+    .restart-btn { margin-top: 32px; padding: 13px 28px; background: var(--flamingo); color: var(--white); border: none; border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+    .restart-btn:hover { opacity: 0.88; }
+    .question-view.hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>CCAR-F Mock Exam 2</h1>
+    <p>40 Questions &nbsp;·&nbsp; Claude Certified Architect Foundations</p>
+  </header>
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="prog-text">Question 1 of 40</span>
+      <span id="score-text">Score: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="card">
+    <div class="question-view" id="question-view">
+      <div class="question-meta">
+        <span class="q-number" id="q-num">Q1</span>
+        <span class="domain-badge" id="q-domain"></span>
+      </div>
+      <div class="question-text" id="q-text"></div>
+      <div class="options" id="options"></div>
+      <div class="explanation" id="explanation">
+        <h4>Explanation</h4>
+        <p id="explanation-text"></p>
+      </div>
+      <button class="next-btn" id="next-btn">Next Question →</button>
+    </div>
+    <div class="score-screen" id="score-screen">
+      <div class="score-circle">
+        <div class="score-number" id="final-score">0</div>
+        <div class="score-label">/ 40</div>
+      </div>
+      <h2 id="score-heading">Results</h2>
+      <p id="score-subtext"></p>
+      <div class="domain-breakdown">
+        <h3>By Domain</h3>
+        <div id="domain-rows"></div>
+      </div>
+      <button class="restart-btn" onclick="restart()">Restart Exam</button>
+    </div>
+  </div>
+</div>
+<script>
+const questions = [
+  // Q1–20 (formerly Part 1)
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "Your agentic loop receives a response from Claude with <code>stop_reason: \"end_turn\"</code> but the message contains no text and no tool calls. What is the correct action?",
+    options: [
+      "Treat it as a completed turn: append the empty assistant message to the conversation, then prompt the user for next steps.",
+      "Immediately retry the same API call — empty <code>end_turn</code> responses are a transient error.",
+      "Raise an exception: <code>stop_reason: \"end_turn\"</code> must always contain a text response.",
+      "Re-append the last user message and call the API again to force a <code>tool_use</code> response."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> <code>stop_reason: \"end_turn\"</code> signals Claude has finished its turn, even if the response is empty — treat it as a completed turn. <strong>B</strong> risks an infinite loop. <strong>C</strong> is wrong: empty end_turn responses are valid. <strong>D</strong> would corrupt conversation history."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A content pipeline processes articles through three independent steps: fact-checking, tone analysis, and SEO scoring. No step depends on another's output. Which orchestration pattern is most appropriate?",
+    options: [
+      "Sequential chain — pass each article through steps one at a time to avoid rate limits.",
+      "Hub-and-spoke with parallel subagent spawning — the coordinator dispatches all three tasks in a single response.",
+      "<code>fork_session</code> — fork from a shared baseline so each agent starts with identical context.",
+      "Iterative refinement — run each agent in sequence, feeding output back as input to the next."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> Independent parallel tasks with no dependencies are the ideal case for hub-and-spoke parallel spawning — the coordinator issues multiple Task calls in a single response. <strong>A</strong> wastes time. <strong>C</strong> is for divergent exploration, not production pipelines. <strong>D</strong> is for tasks where each pass improves on the last."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A coordinator spawns a subagent via the Task tool to analyse a 500-line code file. The subagent returns generic output unrelated to the actual file content. What is the most likely root cause?",
+    options: [
+      "The subagent used a less capable model that lacks code comprehension.",
+      "The Task tool does not support file path arguments — only raw text can be passed.",
+      "Subagents do not inherit coordinator context automatically; the file content was not explicitly passed.",
+      "The subagent silently truncated the input after exceeding its token budget."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Subagents do NOT inherit coordinator context — all relevant context must be explicitly passed in the Task tool's prompt. <strong>A</strong> is rarely the issue with well-specified tasks. <strong>B</strong> is false: Task supports any content. <strong>D</strong> would typically surface as an error, not silently generic output."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A developer needs to explore two competing architectural approaches from the same codebase state without the branches affecting each other. Which session feature is purpose-built for this?",
+    options: [
+      "<code>--resume</code> with two different session names, starting a fresh session for each approach.",
+      "Running two parallel coordinator agents with different <code>allowedTools</code> configurations.",
+      "Using <code>context: fork</code> in a SKILL.md to isolate each approach in a sub-agent.",
+      "<code>fork_session</code>, which creates divergent sessions from a shared baseline."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> <code>fork_session</code> creates divergent sessions from a shared baseline — exactly this use case. <strong>A</strong> is wrong: <code>--resume</code> continues an existing named session. <strong>B</strong> doesn't satisfy the shared-baseline requirement. <strong>C</strong> prevents context pollution in skill invocations but is not a branched-exploration mechanism."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A pipeline must normalise file paths returned by a Read tool — converting Windows backslashes to forward slashes — before Claude processes them. Where should this transformation logic live?",
+    options: [
+      "In a PostToolUse hook, which intercepts tool results before they are appended to the model's context.",
+      "In a PreToolUse hook, which can modify tool arguments before execution.",
+      "As a system prompt instruction telling Claude to normalise paths in its responses.",
+      "As a wrapper function around the Read tool that modifies its return value at the tool definition level."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> PostToolUse hooks intercept tool results after execution but before the model sees them — the correct place for output normalisation. <strong>B</strong> modifies inputs, not outputs. <strong>C</strong> is unreliable for data transformation. <strong>D</strong> couples normalisation to the tool, reducing reusability."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A workflow extracts structured data from legal contracts. Contracts vary significantly, and early extraction results sometimes reveal that later steps need a different strategy. Which decomposition approach is most appropriate?",
+    options: [
+      "Prompt chaining — define all steps upfront as a fixed sequence for predictability and auditability.",
+      "Dynamic adaptive decomposition — allow the orchestrator to adjust subsequent steps based on intermediate results.",
+      "Parallel subagent spawning — run all extraction steps simultaneously to minimise total latency.",
+      "Single-prompt extraction — pass the full contract in one prompt to eliminate coordination overhead."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> When early results should influence later steps, dynamic adaptive decomposition is the right choice. <strong>A</strong> uses a fixed sequence and cannot adapt. <strong>C</strong> cannot handle inter-step dependencies. <strong>D</strong> often fails on long documents and cannot apply specialised, adaptive strategies."
+  },
+  {
+    domain: "Domain 2 — Tool Design & MCP",
+    text: "You have two tools: <code>search_documents</code> and <code>lookup_customer_record</code>. Claude frequently calls <code>search_documents</code> when performing customer lookups. What is the most effective fix?",
+    options: [
+      "Remove <code>search_documents</code> from available tools whenever customer lookup is the expected task.",
+      "Add a system prompt instruction: \"Always use <code>lookup_customer_record</code> for customer data.\"",
+      "Rewrite both tool descriptions to clearly differentiate when each should be called, using specific trigger scenarios.",
+      "Rename <code>search_documents</code> to <code>search_general_documents</code> to make it semantically less attractive."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Tool descriptions are the primary mechanism by which Claude selects tools. Clear, differentiated descriptions are the most direct fix. <strong>A</strong> works only when overlap is impossible. <strong>B</strong> is less reliable than tool-level descriptions. <strong>D</strong> is a surface rename that doesn't provide the semantic clarity needed."
+  },
+  {
+    domain: "Domain 2 — Tool Design & MCP",
+    text: "A tool returns <code>{\"error\": \"permission denied\"}</code> when a user lacks access. The orchestrator retries the call three times before failing. Which missing field would have prevented the retries?",
+    options: [
+      "<code>errorMessage</code> — a human-readable description of the error.",
+      "<code>statusCode</code> — the HTTP-equivalent status code for the error.",
+      "<code>errorCategory</code> — classifying the error as permission, validation, transient, or business logic.",
+      "<code>isRetryable: false</code> — explicitly signalling that retrying will not resolve this error."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> The <code>isRetryable</code> flag tells the orchestrator whether to retry. Without it, the system defaults to retrying — wasting resources on a permission error that will never succeed. <strong>A</strong> aids humans but doesn't drive retry logic. <strong>B</strong> is not part of the structured error schema for tool responses. <strong>C</strong> classifies the error type but retry decisions depend specifically on <code>isRetryable</code>."
+  },
+  {
+    domain: "Domain 2 — Tool Design & MCP",
+    text: "A developer configures an MCP server in <code>~/.claude.json</code>. A colleague clones the repository and cannot see the MCP tools. What is the correct explanation and fix?",
+    options: [
+      "<code>~/.claude.json</code> is user-scoped; to share the MCP server with all collaborators, configure it in the project's <code>.mcp.json</code> file instead.",
+      "The colleague must install the same Claude Code version — MCP servers are version-locked to the configuring user.",
+      "MCP tools require explicit <code>allowedTools</code> entries in CLAUDE.md to be visible to other users.",
+      "<code>~/.claude.json</code> must be committed to the repository; the colleague needs to pull the latest changes."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> <code>~/.claude.json</code> is user-scoped and lives only on the developer's machine. Project-scoped MCP config belongs in <code>.mcp.json</code> at the project root, committed and shared with all collaborators. <strong>B</strong> is false: MCP servers are not version-locked. <strong>C</strong> is wrong: <code>allowedTools</code> controls permissions, not visibility. <strong>D</strong> is wrong: committing personal user config is insecure and incorrect."
+  },
+  {
+    domain: "Domain 3 — Claude Code Configuration",
+    text: "A project has three CLAUDE.md files: <code>~/.claude/CLAUDE.md</code>, <code>./CLAUDE.md</code>, and <code>./src/CLAUDE.md</code>. Claude is invoked from the <code>./src/</code> directory. In what order are these files loaded?",
+    options: [
+      "Only <code>./src/CLAUDE.md</code> applies — Claude uses the nearest file and ignores parent directories.",
+      "All three apply: user-level first, then project-level, then directory-level; more specific files take precedence on conflicts.",
+      "<code>./CLAUDE.md</code> and <code>./src/CLAUDE.md</code> apply; <code>~/.claude/CLAUDE.md</code> is only loaded at startup.",
+      "<code>~/.claude/CLAUDE.md</code> and <code>./src/CLAUDE.md</code> apply; intermediate <code>./CLAUDE.md</code> is skipped when a subdirectory file exists."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> Claude loads all CLAUDE.md files in the full hierarchy — user-level, project-level, then directory-level — simultaneously, with more specific files taking precedence on conflicts. <strong>A</strong> is wrong: nearest-file-only is not how the hierarchy works. <strong>C</strong> is wrong: user-level loads per-invocation, not just at startup. <strong>D</strong> is wrong: intermediate files are never skipped."
+  },
+  {
+    domain: "Domain 3 — Claude Code Configuration",
+    text: "You want a rule that applies only to TypeScript files matching <code>src/components/**/*.tsx</code>. Where should this rule be placed and how should it be scoped?",
+    options: [
+      "In <code>./CLAUDE.md</code> under a <code># Components</code> heading to indicate component scope.",
+      "In <code>.claude/commands/components.md</code> with a <code>paths:</code> frontmatter key listing the glob.",
+      "In <code>.claude/rules/components.yaml</code> with a <code>paths: [\"src/components/**/*.tsx\"]</code> frontmatter field.",
+      "In <code>./src/components/CLAUDE.md</code> with an <code>@import</code> directive pointing to the rule content."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Path-specific rules belong in <code>.claude/rules/</code> as YAML files with a <code>paths:</code> frontmatter glob pattern. <strong>A</strong> is wrong: CLAUDE.md headings provide no path scoping. <strong>B</strong> is wrong: <code>.claude/commands/</code> is for slash commands, not rules. <strong>D</strong> is wrong: a subdirectory CLAUDE.md applies to all files there — it can't scope to <code>.tsx</code> only."
+  },
+  {
+    domain: "Domain 3 — Claude Code Configuration",
+    text: "A developer asks Claude to add a <code>created_at</code> timestamp field to the User model and update the serialiser. Claude has already read both files and confirmed the change is additive and straightforward. What execution mode is most appropriate?",
+    options: [
+      "Plan mode — any model change could have cascading effects that require architectural review.",
+      "Plan mode — multi-file changes always require user approval before Claude proceeds.",
+      "Plan mode — the serialiser update introduces a schema dependency that needs explicit sign-off.",
+      "Direct execution — the scope is well-defined, both files are known, and the task is a single focused change."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> Plan mode is for complex, architectural, or ambiguous tasks. A well-scoped two-file additive change with a clear requirement calls for direct execution — plan mode adds overhead without value. <strong>A</strong> is wrong: cascading effects concern structural refactors, not additive fields. <strong>B</strong> is wrong: multi-file scope doesn't automatically require plan mode. <strong>C</strong> is wrong: the serialiser update is mechanical, not a risk."
+  },
+  {
+    domain: "Domain 3 — Claude Code Configuration",
+    text: "You are integrating Claude Code into a CI pipeline to automatically review PRs. The pipeline must capture Claude's output as structured JSON for a downstream reporting tool. Which flag combination is correct?",
+    options: [
+      "<code>--print</code> with <code>--output-format json</code> — non-interactive mode with structured JSON output.",
+      "<code>--json</code> with <code>--ci</code> — CI mode flag with JSON output format.",
+      "<code>--structured</code> with <code>--no-interactive</code> — structured output with interactive mode disabled.",
+      "<code>--format=json</code> with <code>--pipe</code> — pipe mode with format override."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> <code>-p</code> / <code>--print</code> enables non-interactive CI mode; <code>--output-format json</code> returns structured JSON output. <strong>B</strong>, <strong>C</strong>, and <strong>D</strong> all use flags that do not exist in Claude Code."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "A content moderation prompt says: \"Flag this comment if you are more than 80% confident it is harmful.\" False positives in production are unacceptably high. What is the most effective fix?",
+    options: [
+      "Lower the confidence threshold to 60% to make the classifier less conservative.",
+      "Replace the confidence threshold with explicit categorical criteria defining what constitutes harmful content.",
+      "Add a second Claude instance to validate flagged items before they are actioned.",
+      "Raise the threshold to 95% to make flagging significantly more conservative."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> Confidence thresholds produce inconsistent results because Claude's confidence estimates are not well-calibrated for external use. Categorical criteria — e.g., \"flag if the comment contains direct threats or slurs\" — give concrete decision rules that dramatically reduce false positives. <strong>A</strong> and <strong>D</strong> adjust the threshold without fixing the root cause. <strong>C</strong> adds cost but doesn't fix an ill-defined primary prompt."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "A prompt extracts invoice line items as JSON. In testing, <code>amount</code> is sometimes a string and sometimes a number — inconsistent across responses. What is the most targeted fix?",
+    options: [
+      "Add a JSON schema definition to the system prompt describing the expected field types.",
+      "Switch to tool_use with a strict JSON schema to enforce structured output at the API level.",
+      "Add 2–3 few-shot examples showing correctly formatted extractions with the exact types required.",
+      "Append \"Always use consistent types in your JSON output\" to the end of the user prompt."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Few-shot examples are highly effective for format-consistency issues — showing the model 2–3 correctly typed outputs directly demonstrates the expected format. <strong>A</strong> helps but is less targeted for this specific problem. <strong>B</strong> enforces structure but is a larger change than needed. <strong>D</strong> is the weakest approach: vague instructions have the least effect on output format."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "An agent must call a <code>log_decision</code> tool on every single turn, regardless of whether it also calls other tools. Which <code>tool_choice</code> configuration enforces this?",
+    options: [
+      "<code>{\"type\": \"auto\"}</code> — the model will call <code>log_decision</code> when it determines it is appropriate.",
+      "<code>{\"type\": \"any\"}</code> — forces the model to call at least one tool, which will typically be <code>log_decision</code>.",
+      "<code>{\"type\": \"auto\"}</code> combined with a system prompt instruction to always call <code>log_decision</code>.",
+      "<code>{\"type\": \"tool\", \"name\": \"log_decision\"}</code> — forces the model to call that specific tool."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> Forced tool_choice (<code>type: \"tool\"</code>) makes Claude call the named tool on every turn. <strong>A</strong> allows the model to decide and may skip <code>log_decision</code>. <strong>B</strong> forces a tool call but not which tool. <strong>C</strong> is unreliable — Claude may still skip the tool despite the instruction."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "A pipeline must process 10,000 independent customer records through Claude. Cost is the primary constraint and results are acceptable within 24 hours. Which approach is most appropriate?",
+    options: [
+      "Use the Message Batches API — approximately 50% cost reduction, asynchronous processing, results within 24 hours.",
+      "Use parallel API calls with a thread pool — immediate results and lower latency than batch processing.",
+      "Concatenate all 10,000 records into a single API call to eliminate per-request overhead.",
+      "Use streaming API calls to reduce time-to-first-token across all records simultaneously."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> The Message Batches API is designed for high-volume independent tasks where cost matters and up to 24h latency is acceptable, offering ~50% cost reduction. <strong>B</strong> is faster but no cheaper. <strong>C</strong> would exceed context limits and produce unreliable results. <strong>D</strong> reduces perceived latency for interactive use but does not reduce cost."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "A team uses Claude to review code that Claude generated in the same conversation session. Reviews pass consistently, but bugs slip into production. What change would most improve review quality?",
+    options: [
+      "Use a more capable model for the review step to improve comprehension depth.",
+      "Use a separate, independent Claude instance with no shared context from the generation session.",
+      "Add more detailed review criteria to the generation prompt.",
+      "Run the review prompt twice in the same session to catch inconsistencies between passes."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> Same-session self-review suffers from confirmation bias — the model's generation context biases it toward approving its own work. An independent instance provides a genuinely fresh perspective. <strong>A</strong> may help marginally but doesn't address the root cause. <strong>C</strong> improves criteria but not the same-session bias. <strong>D</strong> repeats the same biased review twice."
+  },
+  {
+    domain: "Domain 5 — Context Management",
+    text: "A long-running customer support agent uses progressive summarisation to stay within context limits. After many turns, it begins misquoting prices and order dates from earlier in the conversation. What is the most likely cause?",
+    options: [
+      "The conversation has become too emotionally complex, causing the model to hallucinate specific values.",
+      "The summarisation window is too small — not enough prior turns are included in each summary.",
+      "Progressive summarisation paraphrases rather than preserves precise values; numbers and dates are especially vulnerable.",
+      "The context window is filling up despite summarisation, causing the model to drop earlier content entirely."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Progressive summarisation compresses information and tends to paraphrase, which is risky for exact values — numbers, prices, and dates get approximated or lost. <strong>A</strong> is not a recognised failure mode for factual misquotation. <strong>B</strong> makes context longer, not more accurate on precise values. <strong>D</strong> would cause information to be dropped entirely, not misquoted."
+  },
+  {
+    domain: "Domain 5 — Context Management",
+    text: "A subagent fails mid-way through processing a 50-document batch. The coordinator receives an error but cannot determine which documents were already processed. What is missing from the subagent's error response?",
+    options: [
+      "A stack trace showing where in execution the failure occurred.",
+      "The error type classification — transient, validation, permission, or business logic.",
+      "A retry directive specifying how many times the coordinator should retry the operation.",
+      "Partial results indicating which documents were successfully processed and which were not attempted."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> Structured error responses in multi-agent systems should include partial results — what was accomplished before failure — so the coordinator can resume from the correct point. <strong>A</strong> aids debugging but doesn't help the coordinator resume. <strong>B</strong> helps with retry decisions but not progress tracking. <strong>C</strong> is wrong: retry decisions are the coordinator's responsibility, not the subagent's."
+  },
+  // Q21–40 (formerly Part 2)
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A developer is debugging a critical production issue, makes progress mid-session, then must hand off to a colleague. The colleague needs to continue from exactly where the developer left off, including full conversation history. Which Claude Code feature enables this?",
+    options: [
+      "<code>--resume &lt;session-name&gt;</code> — continues a named session, restoring full conversation history.",
+      "<code>fork_session</code> — forks the session into a new branch the colleague can continue.",
+      "Saving the CLAUDE.md with session state so the colleague loads the same context on startup.",
+      "Using <code>--print</code> to dump the session to a file, then passing it to the colleague as a prompt."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> <code>--resume &lt;session-name&gt;</code> restores a named session with full conversation history — exactly what a handoff requires. <strong>B</strong> is wrong: <code>fork_session</code> creates divergent branches from a shared baseline, not a continuation. <strong>C</strong> is wrong: CLAUDE.md provides project instructions, not conversation history. <strong>D</strong> is wrong: <code>--print</code> dumps output, not a restorable session."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A coordinator agent's configuration does not include the Task tool in its <code>allowedTools</code>. What is the consequence when the coordinator attempts to spawn a subagent?",
+    options: [
+      "The coordinator automatically gains Task tool access when it first attempts to spawn a subagent.",
+      "The coordinator cannot spawn subagents — the Task tool must be explicitly listed in <code>allowedTools</code>.",
+      "The coordinator can spawn subagents, but they will run with an empty <code>allowedTools</code> list.",
+      "Claude prompts the user to approve Task tool usage at runtime before each subagent spawn."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> The Task tool must be explicitly listed in <code>allowedTools</code> for the coordinator to use it. There is no automatic tool elevation (A), no passthrough with empty tools (C), and no runtime approval prompt for <code>allowedTools</code> (D)."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A research agent produces a draft summary. A second agent reviews and critiques it. The critique is fed back to the first agent for revision. This process repeats until quality is satisfactory. What pattern does this describe?",
+    options: [
+      "Parallel subagent spawning — two agents processing the same content concurrently.",
+      "Hub-and-spoke orchestration — a coordinator delegating to two specialised worker agents.",
+      "Iterative refinement — successive passes where each iteration improves on the previous output.",
+      "Task decomposition — breaking a large task into independent subtasks handled by different agents."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Iterative refinement describes a feedback loop: produce → review → revise → repeat, with each pass improving the output. <strong>A</strong> is wrong: parallel spawning runs agents concurrently on separate tasks. <strong>B</strong> describes a topology, not a feedback loop pattern. <strong>D</strong> is wrong: task decomposition splits work into independent subtasks; here the tasks are tightly coupled through feedback."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A long-running agent resumes a session after 48 hours. The codebase it was working on has received 15 commits since the session started. What is the correct strategy?",
+    options: [
+      "Continue the session unmodified — Claude's context accurately reflects the state at last activity.",
+      "Append a summary of recent git commits to the existing context to keep it current.",
+      "Use <code>--resume</code> to reload the session, which will automatically re-read changed files.",
+      "Discard the stale session and start fresh with current codebase context — significant drift makes resumed sessions unreliable."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> Resuming a session with significant codebase drift risks unreliable decisions — the model may act on code that has already been changed or deleted. Starting fresh with current context is safer. <strong>A</strong> ignores the drift entirely. <strong>B</strong> partially helps but is insufficient for 15 commits of change. <strong>C</strong> is wrong: <code>--resume</code> restores conversation history but does not automatically re-read changed files."
+  },
+  {
+    domain: "Domain 1 — Agentic Architecture",
+    text: "A customer onboarding workflow has three strictly sequential steps: (1) validate documents, (2) create account (requires step 1), (3) send welcome email (requires step 2). Which orchestration correctly models these dependencies?",
+    options: [
+      "Sequential chain: validate → create → send, passing each step's output to the next as input.",
+      "Parallel subagent spawning: dispatch all three steps in a single coordinator response.",
+      "<code>fork_session</code>: fork three sessions from a shared baseline, one per step.",
+      "Dynamic adaptive decomposition: let the orchestrator determine the order at runtime."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> Strict sequential dependencies — each step requiring the previous — call for a sequential chain where outputs pass forward. <strong>B</strong> cannot enforce inter-step dependencies. <strong>C</strong> creates divergent explorations, not a serial pipeline. <strong>D</strong> is designed for variable-structure tasks, not a fixed sequence with known dependencies."
+  },
+  {
+    domain: "Domain 2 — Tool Design & MCP",
+    text: "A compliance auditing agent must call at least one tool on every turn but should have flexibility about which specific tool to invoke. Which <code>tool_choice</code> setting is correct?",
+    options: [
+      "<code>{\"type\": \"auto\"}</code> — the model freely chooses whether to call a tool or return text.",
+      "<code>{\"type\": \"any\"}</code> — forces the model to call at least one tool, with the model choosing which.",
+      "<code>{\"type\": \"tool\", \"name\": \"audit_log\"}</code> — forces the model to always call the <code>audit_log</code> tool specifically.",
+      "Omit <code>tool_choice</code> — the default behaviour requires a tool call on each turn."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> <code>tool_choice: \"any\"</code> forces at least one tool call while leaving the choice of which tool to the model. <strong>A</strong> (auto) allows text-only responses. <strong>C</strong> forces a specific tool every time, not just any tool. <strong>D</strong> is wrong: omitting <code>tool_choice</code> defaults to <code>auto</code>, which may return text only."
+  },
+  {
+    domain: "Domain 2 — Tool Design & MCP",
+    text: "A developer needs to find all TypeScript files in a project that contain the string <code>useAuthContext</code>. Which built-in tool combination is most appropriate?",
+    options: [
+      "Glob with pattern <code>**/*.ts</code> to find TypeScript files, then manually inspect each for the string.",
+      "Read each TypeScript file individually, checking the content after each read.",
+      "Grep with pattern <code>useAuthContext</code> and a glob filter <code>*.ts</code> to find files containing the string.",
+      "Write a Bash command combining <code>find</code> and <code>grep</code> to locate the matching files."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Grep is the dedicated tool for content search — it searches file contents by pattern and supports glob filters to restrict file types. <strong>A</strong> (Glob) matches file paths by pattern but cannot search file contents. <strong>B</strong> is inefficient and reads entire files one at a time. <strong>D</strong> is wrong: Bash should not be used when a dedicated Grep tool is available."
+  },
+  {
+    domain: "Domain 2 — Tool Design & MCP",
+    text: "An agent has a single <code>manage_user</code> tool with a required <code>action</code> parameter accepting values: <code>create</code>, <code>update</code>, <code>delete</code>, <code>fetch</code>. Claude frequently passes incorrect <code>action</code> values. What is the most effective fix?",
+    options: [
+      "Add detailed documentation to the <code>manage_user</code> tool description explaining each action value.",
+      "Add input validation inside the tool to reject invalid action values with a clear error response.",
+      "Add few-shot examples to the system prompt demonstrating correct <code>manage_user</code> calls.",
+      "Split <code>manage_user</code> into four separate tools: <code>create_user</code>, <code>update_user</code>, <code>delete_user</code>, <code>fetch_user</code>."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> Splitting a multi-action tool into distinct single-purpose tools eliminates action parameter ambiguity entirely — each tool's name communicates its intent unambiguously to Claude. <strong>A</strong> and <strong>C</strong> reduce errors but don't eliminate the ambiguity inherent in a multi-action interface. <strong>B</strong> rejects bad calls after they're made but doesn't prevent them."
+  },
+  {
+    domain: "Domain 2 — Tool Design & MCP",
+    text: "An MCP server exposes both a <code>get_customer</code> tool and a <code>customer://12345</code> resource. An agent needs to fetch a specific customer record by ID. Which should be used and why?",
+    options: [
+      "The <code>get_customer</code> tool — tools are the correct mechanism for parameterised, agent-invoked data retrieval in workflows.",
+      "The <code>customer://12345</code> resource — resources provide equivalent capability with lower latency.",
+      "Either is equivalent — resources and tools have identical semantics in MCP.",
+      "The <code>customer://12345</code> resource — MCP tools should be reserved for write operations only."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> In MCP, tools are the correct mechanism for parameterised, agent-invoked operations. Resources are URI-addressable references typically used for context injection, not agent-controlled parameterised retrieval. <strong>B</strong> and <strong>C</strong> are wrong: resources and tools have distinct semantics. <strong>D</strong> is wrong: tools are not limited to write operations."
+  },
+  {
+    domain: "Domain 3 — Claude Code Configuration",
+    text: "A slash command runs a complex multi-subagent analysis. After running it, subsequent conversations unexpectedly reference analysis details from the command. Which SKILL.md frontmatter setting prevents this context from leaking back into the main conversation?",
+    options: [
+      "<code>allowed-tools: []</code> — restricts the skill from using any tools that could write context.",
+      "<code>context: fork</code> — runs the skill in an isolated sub-agent so its context does not pollute the main conversation.",
+      "<code>argument-hint: isolated</code> — marks the skill as context-isolated at invocation time.",
+      "<code>scope: ephemeral</code> — flags the skill's output as non-persistent in the conversation."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> <code>context: fork</code> runs the skill in an isolated sub-agent — its internal context is not appended back to the main conversation, preventing context pollution. <strong>A</strong> restricts tool use but doesn't isolate context. <strong>C</strong> is wrong: <code>argument-hint</code> is a CLI display hint, not a context-isolation mechanism. <strong>D</strong> is wrong: <code>scope: ephemeral</code> is not a valid SKILL.md frontmatter field."
+  },
+  {
+    domain: "Domain 3 — Claude Code Configuration",
+    text: "A project has shared coding standards in <code>.claude/shared/standards.md</code>. Multiple subdirectory CLAUDE.md files need to include these standards without duplicating the content. What is the correct mechanism?",
+    options: [
+      "Place the standards in a <code>.claude/rules/</code> YAML file with <code>paths: [\"**/*\"]</code> to apply them everywhere.",
+      "Copy the standards into each subdirectory CLAUDE.md to ensure they are always loaded.",
+      "Use <code>@.claude/shared/standards.md</code> in each CLAUDE.md file to import the shared content.",
+      "Reference the file using a <code>[include]</code> block in each CLAUDE.md file."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> The <code>@path/to/file</code> directive in CLAUDE.md imports content from another file — the exact mechanism for shared, non-duplicated standards. <strong>A</strong> applies path-scoped rules but is not a content-import mechanism. <strong>B</strong> creates maintenance debt through duplication. <strong>D</strong> is wrong: <code>[include]</code> blocks are not valid CLAUDE.md syntax."
+  },
+  {
+    domain: "Domain 3 — Claude Code Configuration",
+    text: "Claude generates database migration scripts but the output format is inconsistent — sometimes raw SQL, sometimes an ORM DSL. The developer has 3 correctly formatted example migrations. What is the most effective way to use these examples?",
+    options: [
+      "Describe the desired format in the system prompt using precise technical language.",
+      "Add the examples to CLAUDE.md so they are always loaded when working in this project.",
+      "Use them as test cases to validate Claude's output format after generation.",
+      "Include them as few-shot input/output examples in the prompt, showing the migration spec and expected output."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> Few-shot input/output examples directly demonstrate the desired format, which is highly effective for consistency issues. <strong>A</strong> (system prompt description) is less precise than concrete examples. <strong>B</strong> (CLAUDE.md) works but is less targeted than prompt-level few-shot for this specific issue. <strong>C</strong> (validation) catches errors after the fact but doesn't steer generation."
+  },
+  {
+    domain: "Domain 3 — Claude Code Configuration",
+    text: "A developer creates a slash command at <code>.claude/commands/deploy.md</code> in a team repository. A new team member clones the repo and types <code>/deploy</code>. What happens?",
+    options: [
+      "The <code>/deploy</code> command is available immediately — project commands in <code>.claude/commands/</code> are shared with all users who clone the repository.",
+      "The command is available only after the team member runs <code>/reload</code> to pick up new commands.",
+      "The command is unavailable — project slash commands require opt-in in the user's <code>~/.claude/CLAUDE.md</code>.",
+      "The command is available only if the team member has the same Claude Code version as the developer."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> Commands in <code>.claude/commands/</code> are project-scoped and committed to the repository — they are immediately available to any user who clones the repo without additional setup. No <code>/reload</code> is needed (B). No user-level opt-in is required (C). Commands are not version-locked (D)."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "A tool schema defines <code>\"discount_code\": {\"type\": \"string\"}</code>. Claude frequently fabricates discount codes for orders that have none. What schema change most directly prevents this?",
+    options: [
+      "Add a <code>\"description\"</code> field explaining that discount codes are optional and may not be present.",
+      "Change the type to <code>{\"type\": [\"string\", \"null\"]}</code> and make the field optional so Claude can return null when absent.",
+      "Add a validation step after extraction to detect and reject fabricated discount codes.",
+      "Add a few-shot example showing an order without a discount code."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> Making a field nullable/optional with <code>{\"type\": [\"string\", \"null\"]}</code> gives Claude a valid way to represent absence — without it, Claude may fabricate a value to satisfy a non-nullable required field. This is the direct structural fix. <strong>A</strong> reduces errors but doesn't provide a structural path to represent absence. <strong>C</strong> catches errors after the fact. <strong>D</strong> helps but nullable schema is the most targeted fix."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "An extraction agent receives malformed JSON from Claude and retries with the identical prompt. The malformed JSON error recurs on 80% of retries. What change would most improve the success rate?",
+    options: [
+      "Switch to a more capable model for retry attempts to improve JSON generation quality.",
+      "Increase the retry count from 3 to 10 to allow more attempts to succeed by chance.",
+      "Include the specific validation error and the malformed output in the retry prompt so Claude can correct the exact mistake.",
+      "Add <code>\"Return valid JSON only\"</code> to the system prompt to reinforce the format requirement."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Including the specific error and bad output in the retry prompt is \"retry with error feedback\" — it gives Claude the information needed to correct the exact mistake. Without this feedback, retries repeat the same error at the same rate. <strong>A</strong> may help marginally but doesn't fix the missing feedback loop. <strong>B</strong> is wrong: more retries with no new information don't improve the success rate. <strong>D</strong> is a general directive that doesn't target the specific error."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "A code review pipeline uses an independent Claude instance to review each modified file individually. Integration-level bugs — where two files interact incorrectly — keep slipping through. What change addresses this directly?",
+    options: [
+      "Use a larger model for per-file review to improve understanding of file-level interactions.",
+      "Increase the number of independent per-file review instances to get more diverse opinions.",
+      "Add reviewer instructions: \"Consider how this file interacts with the rest of the codebase.\"",
+      "Add a second pass where an independent instance reviews all changed files together to catch cross-file interaction bugs."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> Per-file reviews miss cross-file interaction bugs by design — they see only one file at a time. An integration pass reviewing all changed files together directly addresses this gap. <strong>A</strong> improves per-file depth but doesn't provide cross-file visibility. <strong>B</strong> gives more per-file opinions but still can't see interactions. <strong>C</strong> asks the model to reason about code it hasn't seen."
+  },
+  {
+    domain: "Domain 4 — Prompt Engineering",
+    text: "A pipeline requires Claude to return a structured JSON object matching a specific schema on every call. Occasionally Claude wraps the JSON in markdown fences or adds explanation text before it. What is the most reliable fix?",
+    options: [
+      "Use tool_use with the desired schema defined as a tool — the tool call response is always structured JSON matching the schema.",
+      "Add \"Do not wrap in markdown. Return raw JSON only.\" to the system prompt.",
+      "Post-process responses with a regex to strip markdown fences and extract the JSON.",
+      "Switch to a fine-tuned model that reliably outputs JSON without wrappers."
+    ],
+    correct: 0,
+    explanation: "<strong>A is correct.</strong> tool_use with a schema enforces structured JSON output at the API level — Claude's tool call response is always a valid JSON object matching the schema, with no risk of markdown wrappers or extraneous text. <strong>B</strong> reduces failures but doesn't eliminate them. <strong>C</strong> is fragile post-processing that treats the symptom. <strong>D</strong> is expensive and unnecessary when tool_use solves the problem directly."
+  },
+  {
+    domain: "Domain 5 — Context Management",
+    text: "A customer service agent receives: \"Cancel my subscription — but actually don't, I just want to pause it.\" The agent has clear cancel and clear pause procedures but no policy guidance for ambiguous combined requests. What should the agent do?",
+    options: [
+      "Execute the cancel procedure as the first-mentioned action and notify the customer.",
+      "Escalate to a human agent — policy gaps combined with ambiguous customer intent require human judgement.",
+      "Execute the pause procedure as the most conservative interpretation that preserves customer value.",
+      "Infer the customer's intent from the full conversation history and act on that inference autonomously."
+    ],
+    correct: 1,
+    explanation: "<strong>B is correct.</strong> When customer intent is ambiguous and the agent's policy has no guidance for the specific scenario, escalation to a human is the correct behaviour. Policy gaps combined with ambiguous requests are an explicit escalation trigger. <strong>A</strong> acts on an arbitrary interpretation. <strong>C</strong> also acts autonomously under ambiguity without policy backing. <strong>D</strong> is wrong: inferring intent and acting without escalation risks the wrong outcome."
+  },
+  {
+    domain: "Domain 5 — Context Management",
+    text: "A research agent synthesises information from multiple sources. Source A states a product launched in Q3 2024; Source B states Q4 2024. What is the correct way to handle this conflict in the agent's output?",
+    options: [
+      "Use the most recently retrieved source as the authoritative answer.",
+      "Reconcile the conflicting dates and report a single synthesised answer.",
+      "Report both claims with source attribution, annotate the conflict, and flag it for human verification.",
+      "Exclude the launch date from the output since conflicting data cannot be used reliably."
+    ],
+    correct: 2,
+    explanation: "<strong>C is correct.</strong> Information provenance best practice requires annotating conflicts — reporting both claims with sources, flagging the discrepancy, and surfacing it for human verification. <strong>A</strong> applies an arbitrary authority rule with no basis. <strong>B</strong> fabricates a value that neither source supports. <strong>D</strong> discards useful information; the conflict itself is informative and should be surfaced."
+  },
+  {
+    domain: "Domain 5 — Context Management",
+    text: "An agent is refactoring a 200,000-token codebase. After several subagent calls, it loses track of completed changes and begins re-applying already-completed refactors. What technique directly addresses this?",
+    options: [
+      "Use <code>/compact</code> more aggressively to keep the context window free for new work.",
+      "Increase the number of subagents to distribute the work and reduce per-agent context load.",
+      "Store the full file listing in the coordinator's system prompt to serve as a static reference.",
+      "Maintain a scratchpad file that subagents write completed refactors to, and that the coordinator reads before each step."
+    ],
+    correct: 3,
+    explanation: "<strong>D is correct.</strong> A scratchpad file gives the coordinator durable, authoritative completion state that persists across subagent calls and context compaction — directly preventing re-application of completed work. <strong>A</strong> (<code>/compact</code>) manages context size but can cause exactly this problem by dropping completion records. <strong>B</strong> increases parallelism but doesn't help the coordinator track what is done. <strong>C</strong> is a static file listing, not a completion log."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+const domainScores = {};
+questions.forEach(q => { if (!domainScores[q.domain]) domainScores[q.domain] = [0, 0]; });
+
+function render() {
+  const q = questions[current];
+  document.getElementById('q-num').textContent = `Q${current + 1}`;
+  document.getElementById('q-domain').textContent = q.domain;
+  document.getElementById('q-text').innerHTML = q.text;
+  document.getElementById('explanation').classList.remove('visible');
+  document.getElementById('next-btn').classList.remove('visible');
+  document.getElementById('next-btn').textContent = current === questions.length - 1 ? 'See Results →' : 'Next Question →';
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  ['A','B','C','D'].forEach((letter, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.innerHTML = `<span class="option-letter">${letter}</span><span class="option-text">${q.options[i]}</span>`;
+    div.addEventListener('click', () => selectAnswer(i));
+    opts.appendChild(div);
+  });
+  updateProgress();
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  domainScores[q.domain][1]++;
+  const opts = document.getElementById('options').children;
+  for (let i = 0; i < opts.length; i++) {
+    opts[i].classList.add('disabled');
+    if (i === q.correct) opts[i].classList.add('correct');
+    else if (i === idx) opts[i].classList.add('wrong');
+  }
+  if (idx === q.correct) { score++; domainScores[q.domain][0]++; }
+  document.getElementById('explanation-text').innerHTML = q.explanation;
+  document.getElementById('explanation').classList.add('visible');
+  document.getElementById('next-btn').classList.add('visible');
+  document.getElementById('score-text').textContent = `Score: ${score}`;
+}
+
+function updateProgress() {
+  document.getElementById('prog-fill').style.width = (current / questions.length * 100) + '%';
+  document.getElementById('prog-text').textContent = `Question ${current + 1} of ${questions.length}`;
+  document.getElementById('score-text').textContent = `Score: ${score}`;
+}
+
+document.getElementById('next-btn').addEventListener('click', () => {
+  if (current < questions.length - 1) { current++; answered = false; render(); }
+  else showScore();
+});
+
+function showScore() {
+  document.getElementById('question-view').classList.add('hidden');
+  document.getElementById('score-screen').classList.add('visible');
+  document.getElementById('final-score').textContent = score;
+  const pct = Math.round(score / questions.length * 100);
+  document.getElementById('score-heading').textContent = pct >= 72 ? 'Great work!' : 'Keep practising';
+  document.getElementById('score-subtext').textContent = `You scored ${score}/40 (${pct}%). CCAR-F passing threshold is 72%.`;
+  document.getElementById('prog-fill').style.width = '100%';
+  document.getElementById('prog-text').textContent = 'Complete';
+  const rows = document.getElementById('domain-rows');
+  rows.innerHTML = '';
+  Object.entries(domainScores).forEach(([domain, [got, total]]) => {
+    if (!total) return;
+    const p = total ? got / total * 100 : 0;
+    const row = document.createElement('div');
+    row.className = 'domain-row';
+    row.innerHTML = `<span class="domain-name">${domain}</span><div class="domain-bar-wrap"><div class="domain-bar-fill" style="width:${p}%"></div></div><span class="domain-score">${got}/${total}</span>`;
+    rows.appendChild(row);
+  });
+}
+
+function restart() {
+  current = 0; score = 0; answered = false;
+  Object.keys(domainScores).forEach(k => { domainScores[k] = [0, 0]; });
+  document.getElementById('question-view').classList.remove('hidden');
+  document.getElementById('score-screen').classList.remove('visible');
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

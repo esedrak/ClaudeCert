@@ -17,8 +17,9 @@ This guide covers core architectural scenarios you are likely to encounter, incl
 
 ## Practice Quiz
 
-An interactive quiz covering 50 questions.
+An interactive quiz covering 40-50 questions.
 
+e.g. 
 To open it:
 ```
 open quiz.html
